@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next'
 import { Lora, Playfair_Display } from 'next/font/google'
 import React from 'react'
 import './styles.css'
@@ -39,6 +40,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
             </a>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   )
