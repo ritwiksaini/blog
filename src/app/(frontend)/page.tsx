@@ -4,6 +4,8 @@ import config from '@/payload.config'
 
 import { PostCard } from './PostCard'
 
+export const revalidate = 60
+
 export default async function HomePage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
