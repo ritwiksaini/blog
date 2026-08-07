@@ -13,11 +13,11 @@ const formatDate = (isoDate: string) =>
 
 export function TagRow({ post }: { post: Post }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-ink-muted">
-      <span className="rounded-full border border-tag/40 px-2.5 py-1 text-tag">
+    <div className="flex flex-wrap items-center gap-2 font-mono-body text-xs text-ink-muted">
+      <span className="rounded-sm border border-accent/30 px-2 py-0.5 text-accent">
         {labelFor(geographyOptions, post.geography)}
       </span>
-      <span className="rounded-full border border-tag/40 px-2.5 py-1 text-tag">
+      <span className="rounded-sm border border-accent/30 px-2 py-0.5 text-accent">
         {labelFor(industryOptions, post.industry)}
       </span>
       <span className="px-1">{formatDate(post.publishedDate)}</span>
@@ -25,14 +25,14 @@ export function TagRow({ post }: { post: Post }) {
   )
 }
 
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, index }: { post: Post; index: number }) {
   const featuredImage =
     typeof post.featuredImage === 'object' ? (post.featuredImage as Media | null) : null
 
   return (
     <Link
       href={`/${post.slug}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-paper-dark bg-paper transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-md border border-paper-dark bg-paper transition-all hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_4px_0_0_var(--color-accent-soft)]"
     >
       {featuredImage?.url && (
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-paper-dark">
@@ -40,16 +40,21 @@ export function PostCard({ post }: { post: Post }) {
             src={featuredImage.url}
             alt={featuredImage.alt ?? post.title}
             fill
-            className="object-cover"
+            className="object-cover grayscale transition-all duration-300 group-hover:grayscale-0"
           />
         </div>
       )}
       <div className="flex flex-1 flex-col gap-3 p-5">
-        <TagRow post={post} />
-        <h2 className="font-serif-display text-xl leading-snug group-hover:underline">
+        <div className="flex items-start justify-between gap-3">
+          <TagRow post={post} />
+          <span className="font-mono-body text-xs text-ink-muted/60">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+        </div>
+        <h2 className="font-mono-display text-lg leading-snug group-hover:text-accent">
           {post.title}
         </h2>
-        <p className="line-clamp-3 text-sm text-ink-muted">{post.excerpt}</p>
+        <p className="line-clamp-3 font-mono-body text-sm text-ink-muted">{post.excerpt}</p>
       </div>
     </Link>
   )

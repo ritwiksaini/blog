@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 
 import { TagRow } from '../PostCard'
+import { ShareButton } from './ShareButton'
 
 async function getPost(slug: string) {
   const payloadConfig = await config
@@ -61,9 +62,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   return (
     <article className="mx-auto max-w-2xl">
-      <TagRow post={post} />
-      <h1 className="mt-4 font-serif-display text-4xl leading-tight">{post.title}</h1>
-      <div className="prose prose-neutral mt-8 max-w-none text-ink">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TagRow post={post} />
+        <ShareButton title={post.title} />
+      </div>
+      <h1 className="mt-4 font-mono-display text-3xl leading-tight">{post.title}</h1>
+      <div className="prose prose-neutral mt-8 max-w-none font-mono-body text-ink">
         <RichText data={post.content} />
       </div>
     </article>

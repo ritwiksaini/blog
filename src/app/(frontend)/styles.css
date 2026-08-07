@@ -2,14 +2,16 @@
 @plugin '@tailwindcss/typography';
 
 @theme {
-  --color-paper: #f5f1e8;
-  --color-paper-dark: #ece5d5;
-  --color-ink: #2a2521;
-  --color-ink-muted: #6b625a;
-  --color-tag: #b08d57;
+  --color-paper: #fafaf9;
+  --color-paper-dark: #e9e7e3;
+  --color-ink: #18181b;
+  --color-ink-muted: #7a766f;
+  --color-accent: #c2401f;
+  --color-accent-soft: #f6e5e1;
+  --color-tag: #c2401f;
 
-  --font-serif-display: var(--font-playfair), Georgia, serif;
-  --font-serif-body: var(--font-lora), Georgia, serif;
+  --font-mono-display: var(--font-cousine), ui-monospace, 'SF Mono', monospace;
+  --font-mono-body: var(--font-cousine), ui-monospace, 'SF Mono', monospace;
 }
 
 html {
@@ -18,5 +20,35 @@ html {
 }
 
 body {
-  font-family: var(--font-serif-body);
+  font-family: var(--font-mono-body);
+  background-image: radial-gradient(circle, var(--color-paper-dark) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.prose :where(a) {
+  color: var(--color-accent);
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.prose :where(code) {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-weight: 400;
+}
+
+.prose :where(h1, h2, h3, h4, strong) {
+  font-family: var(--font-mono-display);
+  color: var(--color-ink);
+}
+
+.prose :where(blockquote) {
+  border-left-color: var(--color-accent);
+  color: var(--color-ink-muted);
 }
