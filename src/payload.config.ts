@@ -25,10 +25,11 @@ if (process.env.BLOB_READ_WRITE_TOKEN) {
       collections: {
         media: true,
       },
-      // Vercel's serverless functions cap request bodies at 4.5MB; routing the
-      // upload straight from the browser to Blob (via a signed token) instead
-      // of through the function avoids that limit entirely.
-      clientUploads: true,
+      // clientUploads (direct-to-Blob browser upload, bypassing Vercel's
+      // 4.5MB function body limit) was tried and pulled back out: the admin
+      // UI got stuck on "Submitting" without surfacing the underlying error.
+      // Standard server-side upload is reliable and the 4.5MB cap is not a
+      // practical constraint for compressed blog images.
       token: process.env.BLOB_READ_WRITE_TOKEN,
     }),
   )
