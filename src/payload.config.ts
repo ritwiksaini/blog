@@ -25,6 +25,10 @@ if (process.env.BLOB_READ_WRITE_TOKEN) {
       collections: {
         media: true,
       },
+      // Vercel's serverless functions cap request bodies at 4.5MB; routing the
+      // upload straight from the browser to Blob (via a signed token) instead
+      // of through the function avoids that limit entirely.
+      clientUploads: true,
       token: process.env.BLOB_READ_WRITE_TOKEN,
     }),
   )
