@@ -1,7 +1,12 @@
-// Central list of allowed Geography / Industry tag values.
-// Single-admin, low-volume blog: extend these lists in code as new posts need
-// a value that doesn't exist yet, rather than modeling geography/industry as
-// separate relationship collections managed through the admin UI.
+// Central list of allowed Geography / Asset Class tag values.
+//
+// These two stay as `select` fields (Postgres enums) because they are
+// deliberately closed sets: three geographies and two asset classes, decided
+// up front and not expected to grow. Adding a value here requires a migration.
+//
+// Sector is deliberately NOT here — it's a relationship to the `sectors`
+// collection so new sectors can be added from the admin UI (or by the drafting
+// agent) as posts are written, without a code change or a migration.
 
 export const geographyOptions = [
   { label: 'Global', value: 'global' },
@@ -9,9 +14,8 @@ export const geographyOptions = [
   { label: 'United States', value: 'united-states' },
 ] as const
 
-export const industryOptions = [
+export const assetClassOptions = [
   { label: 'Private Equity', value: 'private-equity' },
   { label: 'Venture Capital', value: 'venture-capital' },
-  { label: 'Data Centers', value: 'data-centers' },
-  { label: 'Nuclear Energy', value: 'nuclear-energy' },
+  { label: 'Cross', value: 'cross' },
 ] as const

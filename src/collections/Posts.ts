@@ -1,13 +1,14 @@
 import type { CollectionConfig } from 'payload'
 
+import { isBot } from '../access/roles'
 import { formatSlug } from '../utilities/formatSlug'
-import { geographyOptions, industryOptions } from './postTaxonomy'
+import { assetClassOptions, geographyOptions } from './postTaxonomy'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'geography', 'industry', 'publishedDate', '_status'],
+    defaultColumns: ['title', 'geography', 'assetClass', 'sector', 'publishedDate', '_status'],
   },
   versions: {
     drafts: true,
@@ -16,9 +17,39 @@ export const Posts: CollectionConfig = {
     // Logged-in admin sees everything (including drafts); public requests
     // only ever see published documents.
     read: ({ req: { user } }) => (user ? true : { _status: { equals: 'published' } }),
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+
+    // The bot may only ever create drafts. `?draft=true` sets data._status to
+    // 'draft' before this check runs, so requiring the explicit value forces
+    // the bot onto the draft codepath.
+    create: ({ req, data }) => {
+      if (!req.user) return false
+      if (!isBot(req.user)) return true
+      return data?._status === 'draft'
+    },
+
+    // The bot may never publish, and may never touch a doc that is already
+    // published. Returning a Where constraint means this is enforced against
+    // the *stored* row, not just the incoming body.
+    update: ({ req, data }) => {
+      if (!req.user) return false
+      if (!isBot(req.user)) return true
+      if (data?._status === 'published') return false
+      return { _status: { equals: 'draft' } }
+    },
+
+    delete: ({ req }) => Boolean(req.user) && !isBot(req.user),
+  },
+  hooks: {
+    beforeChange: [
+      ({ data, req }) => {
+        // Belt-and-braces alongside the access rules above: covers GraphQL and
+        // any future codepath that doesn't route through collection access.
+        if (isBot(req.user) && data?._status === 'published') {
+          throw new Error('Bot users cannot publish posts.')
+        }
+        return data
+      },
+    ],
   },
   fields: [
     {
@@ -50,11 +81,51 @@ export const Posts: CollectionConfig = {
       name: 'excerpt',
       type: 'textarea',
       required: true,
+      admin: {
+        description: 'Shown as the standfirst under the title, and in listings.',
+      },
     },
     {
       name: 'content',
       type: 'richText',
       required: true,
+    },
+    {
+      name: 'sources',
+      type: 'array',
+      required: true,
+      minRows: 1,
+      labels: { singular: 'Source', plural: 'Sources' },
+      admin: {
+        description: 'Every factual claim in the post must trace to one of these.',
+        initCollapsed: true,
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        {
+          name: 'url',
+          type: 'text',
+          required: true,
+          validate: (value: string | null | undefined) => {
+            if (!value) return 'A source URL is required.'
+            try {
+              const parsed = new URL(value)
+              if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                return 'Source URLs must be http(s).'
+              }
+            } catch {
+              return 'That is not a valid absolute URL.'
+            }
+            return true
+          },
+        },
+        { name: 'publisher', type: 'text' },
+        {
+          name: 'dateAccessed',
+          type: 'date',
+          admin: { date: { pickerAppearance: 'dayOnly' } },
+        },
+      ],
     },
     {
       name: 'publishedDate',
@@ -86,12 +157,22 @@ export const Posts: CollectionConfig = {
       },
     },
     {
-      name: 'industry',
+      name: 'assetClass',
       type: 'select',
       required: true,
-      options: [...industryOptions],
+      options: [...assetClassOptions],
       admin: {
         position: 'sidebar',
+      },
+    },
+    {
+      name: 'sector',
+      type: 'relationship',
+      relationTo: 'sectors',
+      required: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Create a new sector if none of the existing ones fit.',
       },
     },
   ],

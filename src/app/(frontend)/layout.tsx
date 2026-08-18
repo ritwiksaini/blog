@@ -1,5 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
-import { Cousine } from 'next/font/google'
+import { Cousine, Source_Serif_4 } from 'next/font/google'
 import React from 'react'
 
 import './styles.css'
@@ -8,6 +8,16 @@ const cousine = Cousine({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-cousine',
+})
+
+// Mono stays the identity of the site — it carries every piece of chrome.
+// Long-form body copy moves to a screen-optimised serif, which is the whole
+// readability difference on an 800-1500 word post.
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-source-serif',
 })
 
 export const metadata = {
@@ -20,7 +30,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
-    <html lang="en" className={cousine.variable}>
+    <html lang="en" className={`${cousine.variable} ${sourceSerif.variable}`}>
       <body className="min-h-screen bg-paper text-ink">
         <header className="border-b border-paper-dark">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">

@@ -3,7 +3,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 
 import { DataMesh } from './DataMesh'
-import { PostCard } from './PostCard'
+import { PostListItem } from './PostListItem'
 
 export const revalidate = 60
 
@@ -20,7 +20,11 @@ export default async function HomePage() {
     overrideAccess: false,
   })
 
-  const sectors = new Set(posts.map((post) => post.industry)).size
+  const sectors = new Set(
+    posts
+      .map((post) => (typeof post.sector === 'object' && post.sector ? post.sector.id : post.sector))
+      .filter(Boolean),
+  ).size
   const regions = new Set(posts.map((post) => post.geography)).size
 
   const stats: { label: string; value: number }[] = [
@@ -45,22 +49,32 @@ export default async function HomePage() {
         </div>
         <div className="flex flex-col gap-6">
           <DataMesh className="h-16 w-full text-accent" />
-          <dl className="grid grid-cols-3 gap-4 font-mono-body text-xs text-ink-muted">
-            {stats.map((stat) => (
-              <div key={stat.label} className="border-l border-paper-dark pl-3">
-                <dt className="font-mono-display text-2xl font-bold text-ink">{stat.value}</dt>
-                <dd className="uppercase tracking-wide">{stat.label}</dd>
-              </div>
-            ))}
-          </dl>
+          {posts.length > 0 && (
+            <dl className="grid grid-cols-3 gap-4 font-mono-body text-xs text-ink-muted">
+              {stats.map((stat) => (
+                <div key={stat.label}>
+                  <dt className="font-mono-display text-2xl font-bold text-ink">{stat.value}</dt>
+                  <dd className="uppercase tracking-wide">{stat.label}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </section>
+
       {posts.length === 0 ? (
-        <p className="text-ink-muted">No posts published yet.</p>
+        <div className="border border-dashed border-paper-dark px-8 py-16 text-center">
+          <p className="font-mono-display text-sm uppercase tracking-[0.2em] text-ink-muted">
+            First note in progress
+          </p>
+          <p className="mx-auto mt-3 max-w-sm font-serif-body text-base leading-relaxed text-ink-muted">
+            New writing lands on the 1st and 15th of each month.
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, index) => (
-            <PostCard key={post.id} post={post} index={index} />
+        <div>
+          {posts.map((post) => (
+            <PostListItem key={post.id} post={post} />
           ))}
         </div>
       )}

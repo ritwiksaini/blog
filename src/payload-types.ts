@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     posts: Post;
+    sectors: Sector;
+    pitches: Pitch;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +82,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    sectors: SectorsSelect<false> | SectorsSelect<true>;
+    pitches: PitchesSelect<false> | PitchesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -125,8 +129,15 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * Bot users can only ever create and edit drafts.
+   */
+  roles: ('admin' | 'bot')[];
   updatedAt: string;
   createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -174,6 +185,9 @@ export interface Post {
    * Auto-generated from the title if left blank.
    */
   slug: string;
+  /**
+   * Shown as the standfirst under the title, and in listings.
+   */
   excerpt: string;
   content: {
     root: {
@@ -190,13 +204,103 @@ export interface Post {
     };
     [k: string]: unknown;
   };
+  /**
+   * Every factual claim in the post must trace to one of these.
+   */
+  sources: {
+    title: string;
+    url: string;
+    publisher?: string | null;
+    dateAccessed?: string | null;
+    id?: string | null;
+  }[];
   publishedDate: string;
   featuredImage?: (number | null) | Media;
   geography: 'global' | 'india' | 'united-states';
-  industry: 'private-equity' | 'venture-capital' | 'data-centers' | 'nuclear-energy';
+  assetClass: 'private-equity' | 'venture-capital' | 'cross';
+  /**
+   * Create a new sector if none of the existing ones fit.
+   */
+  sector: number | Sector;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Post sectors. Add a new one whenever a post needs it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sectors".
+ */
+export interface Sector {
+  id: number;
+  name: string;
+  /**
+   * Auto-generated from the name if left blank.
+   */
+  slug: string;
+  /**
+   * Optional. Shown on sector browse pages later.
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Research pitches. Set one to "Selected" and the drafter will pick it up.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pitches".
+ */
+export interface Pitch {
+  id: number;
+  title: string;
+  /**
+   * The specific argument this post would make.
+   */
+  angle: string;
+  /**
+   * What in the last two weeks makes this timely.
+   */
+  whyNow: string;
+  /**
+   * Paths into the blog-research repo backing this pitch.
+   */
+  researchPaths?:
+    | {
+        path: string;
+        id?: string | null;
+      }[]
+    | null;
+  candidateSources: {
+    title: string;
+    url: string;
+    publisher?: string | null;
+    dateAccessed?: string | null;
+    id?: string | null;
+  }[];
+  geography: 'global' | 'india' | 'united-states';
+  assetClass: 'private-equity' | 'venture-capital' | 'cross';
+  /**
+   * Empty if the agent proposed a sector that does not exist yet.
+   */
+  suggestedSector?: (number | null) | Sector;
+  /**
+   * A proposed new sector name. Create it in Sectors, then link it above.
+   */
+  suggestedSectorName?: string | null;
+  postFormat: 'sharp-take' | 'thesis';
+  /**
+   * Set to "Selected" to have the drafter write this one.
+   */
+  status: 'proposed' | 'selected' | 'drafted' | 'rejected';
+  /**
+   * Set by the drafter. Its presence is what prevents double-drafting.
+   */
+  linkedPost?: (number | null) | Post;
+  draftedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -233,6 +337,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'posts';
         value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'sectors';
+        value: number | Sector;
+      } | null)
+    | ({
+        relationTo: 'pitches';
+        value: number | Pitch;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -281,8 +393,12 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
   updatedAt?: T;
   createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
   email?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
@@ -325,13 +441,68 @@ export interface PostsSelect<T extends boolean = true> {
   slug?: T;
   excerpt?: T;
   content?: T;
+  sources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        publisher?: T;
+        dateAccessed?: T;
+        id?: T;
+      };
   publishedDate?: T;
   featuredImage?: T;
   geography?: T;
-  industry?: T;
+  assetClass?: T;
+  sector?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sectors_select".
+ */
+export interface SectorsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pitches_select".
+ */
+export interface PitchesSelect<T extends boolean = true> {
+  title?: T;
+  angle?: T;
+  whyNow?: T;
+  researchPaths?:
+    | T
+    | {
+        path?: T;
+        id?: T;
+      };
+  candidateSources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        publisher?: T;
+        dateAccessed?: T;
+        id?: T;
+      };
+  geography?: T;
+  assetClass?: T;
+  suggestedSector?: T;
+  suggestedSectorName?: T;
+  postFormat?: T;
+  status?: T;
+  linkedPost?: T;
+  draftedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
