@@ -102,3 +102,37 @@ body {
   line-height: 1.5;
   text-wrap: balance;
 }
+
+/* Side-note explaining a term, as distinct from a pull-quote. Deliberately the
+   opposite of the quote treatment: smaller not larger, ranged left not centred,
+   mono not serif, set into a tinted panel rather than opened out with rules.
+   A reader should be able to skip it without losing the argument. Still no
+   vertical left rule. */
+.prose-article :where(.post-aside) {
+  margin-block: 2em;
+  padding: 1.1em 1.25em;
+  background: var(--color-paper-dark);
+  font-family: var(--font-mono-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  text-align: start;
+  color: var(--color-ink-muted);
+}
+
+.prose-article :where(.post-aside p) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin-block: 0;
+}
+
+.prose-article :where(.post-aside p + p) {
+  margin-block-start: 0.75em;
+}
+
+/* The bold lead-in is the note's label. */
+.prose-article :where(.post-aside strong) {
+  font-family: var(--font-mono-display);
+  font-weight: 700;
+  color: var(--color-ink);
+}

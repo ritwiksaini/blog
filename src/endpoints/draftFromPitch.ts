@@ -14,6 +14,17 @@ const WORD_RANGES: Record<string, { min: number; max: number }> = {
 // "source" — so reject it loudly instead.
 const URL_UNSAFE_FOR_MARKDOWN = /[()\s]/
 
+// House style: no em dashes, ever. Enforced here rather than left to the
+// drafting prompt because prompts drift across model revisions and a validator
+// does not. Source titles are deliberately exempt — a real publication headline
+// may contain one and rewriting a citation would corrupt it.
+const EM_DASH = /—/
+
+// Counted, not banned. En dashes are legitimate in ranges and score lines, but
+// a drafter reaching for them repeatedly is usually just routing around the em
+// dash ban.
+const EN_DASH_LIMIT = 3
+
 const json = (body: unknown, status: number) =>
   Response.json(body as Record<string, unknown>, { status })
 
@@ -84,6 +95,26 @@ export const draftFromPitch: Endpoint = {
     const range = WORD_RANGES[postFormat] ?? WORD_RANGES['sharp-take']
     if (words < range.min || words > range.max) {
       errors.push(`word count ${words} outside ${postFormat} range ${range.min}-${range.max}`)
+    }
+
+    for (const [field, value] of [
+      ['title', title],
+      ['excerpt', excerpt],
+      ['markdown', markdown],
+    ] as const) {
+      if (EM_DASH.test(String(value ?? ''))) {
+        const count = (String(value ?? '').match(/—/g) ?? []).length
+        errors.push(
+          `${field} contains ${count} em dash(es). House style forbids them: rewrite as a comma, a full stop, or a colon.`,
+        )
+      }
+    }
+
+    const enDashes = (String(markdown ?? '').match(/–/g) ?? []).length
+    if (enDashes > EN_DASH_LIMIT) {
+      errors.push(
+        `markdown contains ${enDashes} en dashes (limit ${EN_DASH_LIMIT}). Keep them for numeric ranges only.`,
+      )
     }
 
     if (/^```/m.test(markdown ?? '')) {

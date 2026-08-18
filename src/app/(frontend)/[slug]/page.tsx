@@ -1,4 +1,3 @@
-import { RichText } from '@payloadcms/richtext-lexical/react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -9,6 +8,7 @@ import { BYLINE, formatFullDate } from '@/utilities/postDisplay'
 import { readingTimeMinutes } from '@/utilities/readingTime'
 
 import { Kicker } from '../Kicker'
+import { PostBody } from './PostBody'
 import { ShareButton } from './ShareButton'
 import { Sources } from './Sources'
 
@@ -108,9 +108,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         </figure>
       )}
 
-      <div className="prose prose-article prose-neutral mt-10 max-w-none text-ink">
-        <RichText data={post.content} />
-      </div>
+      <PostBody content={post.content} />
 
       <Sources sources={post.sources} />
     </article>

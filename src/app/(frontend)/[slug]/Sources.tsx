@@ -1,13 +1,11 @@
 import type { Post } from '@/payload-types'
 
-const formatAccessed = (isoDate?: string | null) =>
-  isoDate
-    ? new Date(isoDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-    : null
-
 /**
  * Every factual claim in a post traces to one of these. Rendered as a numbered
  * list so inline citations in the body can refer to them by number.
+ *
+ * `dateAccessed` is still collected and stored for provenance, but deliberately
+ * not rendered: it reads as apparatus rather than as something a reader needs.
  */
 export function Sources({ sources }: { sources: Post['sources'] }) {
   if (!sources || sources.length === 0) return null
@@ -19,8 +17,6 @@ export function Sources({ sources }: { sources: Post['sources'] }) {
       </h2>
       <ol className="mt-5 space-y-3">
         {sources.map((source, index) => {
-          const accessed = formatAccessed(source.dateAccessed)
-
           return (
             <li key={source.id ?? index} className="flex gap-3 font-mono-body text-sm">
               <span className="shrink-0 tabular-nums text-ink-muted/70">
@@ -35,8 +31,7 @@ export function Sources({ sources }: { sources: Post['sources'] }) {
                 >
                   {source.title}
                 </a>
-                {source.publisher && <span> — {source.publisher}</span>}
-                {accessed && <span className="text-ink-muted/70"> · accessed {accessed}</span>}
+                {source.publisher && <span> · {source.publisher}</span>}
               </span>
             </li>
           )
