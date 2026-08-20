@@ -11,6 +11,7 @@ import { readingTimeMinutes } from '@/utilities/readingTime'
 import { OG_IMAGE, PERSON_ID, PORTFOLIO_URL, SITE_NAME, SITE_URL } from '@/utilities/site'
 
 import { Kicker } from '../Kicker'
+import { SubscribeForm } from '../SubscribeForm'
 import { PostBody } from './PostBody'
 import { ShareButton } from './ShareButton'
 import { Sources } from './Sources'
@@ -159,19 +160,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <Sources sources={post.sources} />
 
-      {/* A reader arriving from a shared link has no idea who wrote this. This
-          is also the reciprocal half of the entity link: the portfolio points
-          here through sameAs, and until now nothing pointed back. */}
-      <aside className="mt-14 border-t border-paper-dark pt-6 font-mono-body text-sm text-ink-muted">
-        <p>
-          Written by{' '}
-          <a href={PORTFOLIO_URL} className="text-ink hover:text-accent">
-            {BYLINE}
-          </a>
-          , who works in private capital markets: deal sourcing, investment
-          theses, and automation around financial workflows. Boston University
-          &rsquo;26, CFA Level I.
-        </p>
+      <aside className="mt-14 border-t border-paper-dark pt-2">
+        <SubscribeForm source="post" />
       </aside>
     </article>
   )
