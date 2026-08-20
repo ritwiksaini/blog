@@ -13,6 +13,7 @@ import { Posts } from './collections/Posts'
 import { Pitches } from './collections/Pitches'
 import { Sectors } from './collections/Sectors'
 import { Subscribers } from './collections/Subscribers'
+import { Syndication } from './collections/Syndication'
 import { draftFromPitch } from './endpoints/draftFromPitch'
 
 const filename = fileURLToPath(import.meta.url)
@@ -60,7 +61,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Posts, Sectors, Pitches, Subscribers],
+  collections: [Users, Media, Posts, Sectors, Pitches, Subscribers, Syndication],
   email,
   endpoints: [draftFromPitch],
   editor: lexicalEditor(),

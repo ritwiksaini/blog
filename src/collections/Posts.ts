@@ -232,5 +232,15 @@ export const Posts: CollectionConfig = {
         },
       },
     },
+    {
+      name: 'queueLinkedIn',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '/components/QueueLinkedInButton#QueueLinkedInButton',
+        },
+      },
+    },
   ],
 }

@@ -73,6 +73,7 @@ export interface Config {
     sectors: Sector;
     pitches: Pitch;
     subscribers: Subscriber;
+    syndication: Syndication;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     sectors: SectorsSelect<false> | SectorsSelect<true>;
     pitches: PitchesSelect<false> | PitchesSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    syndication: SyndicationSelect<false> | SyndicationSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -334,6 +336,69 @@ export interface Subscriber {
   createdAt: string;
 }
 /**
+ * Platform-native drafts to paste by hand, and the performance numbers you enter afterwards.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syndication".
+ */
+export interface Syndication {
+  id: number;
+  /**
+   * Set from the post title when the draft is created.
+   */
+  label?: string | null;
+  post: number | Post;
+  platform: 'linkedin';
+  /**
+   * Queued means the routine has not written it yet.
+   */
+  status: 'queued' | 'drafted' | 'posted' | 'skipped';
+  /**
+   * The post exactly as it will be pasted. First line is the hook and must survive the mobile fold at ~140 characters. No link in here: it goes in the first comment.
+   */
+  body?: string | null;
+  /**
+   * Posted as the first comment immediately after the post itself, carrying the blog URL. This is what keeps the link out of the post body.
+   */
+  linkComment?: string | null;
+  /**
+   * Recorded so the metrics below can eventually answer whether the first-comment workaround is worth its lower click-through.
+   */
+  linkPlacement?: ('first-comment' | 'in-post') | null;
+  /**
+   * When you actually pasted it. The metric buckets count from here.
+   */
+  postedAt?: string | null;
+  /**
+   * Paste the URL of the live post so the numbers can be re-checked.
+   */
+  postUrl?: string | null;
+  /**
+   * LinkedIn has no impressions API for personal profiles, so these are entered by hand from the post analytics panel. Take one at 48 hours, one at 7 days, one at 30 days.
+   */
+  metrics?:
+    | {
+        bucket: '48h' | '7d' | '30d';
+        capturedAt: string;
+        impressions?: number | null;
+        reactions?: number | null;
+        comments?: number | null;
+        reposts?: number | null;
+        /**
+         * Clicks on the first-comment link, if LinkedIn reports them.
+         */
+        linkClicks?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * What you changed before posting, or anything about the post that would explain its numbers later.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -380,6 +445,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'syndication';
+        value: number | Syndication;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -553,6 +622,36 @@ export interface SubscribersSelect<T extends boolean = true> {
   unsubscribeToken?: T;
   confirmedAt?: T;
   unsubscribedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syndication_select".
+ */
+export interface SyndicationSelect<T extends boolean = true> {
+  label?: T;
+  post?: T;
+  platform?: T;
+  status?: T;
+  body?: T;
+  linkComment?: T;
+  linkPlacement?: T;
+  postedAt?: T;
+  postUrl?: T;
+  metrics?:
+    | T
+    | {
+        bucket?: T;
+        capturedAt?: T;
+        impressions?: T;
+        reactions?: T;
+        comments?: T;
+        reposts?: T;
+        linkClicks?: T;
+        id?: T;
+      };
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

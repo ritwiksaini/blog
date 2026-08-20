@@ -4,6 +4,7 @@ import * as migration_20260818_002448_drop_industry from './20260818_002448_drop
 import * as migration_20260819_220803_add_subscribers from './20260819_220803_add_subscribers';
 import * as migration_20260819_232242_add_subscriber_tokens from './20260819_232242_add_subscriber_tokens';
 import * as migration_20260820_030038_add_newsletter_send_fields from './20260820_030038_add_newsletter_send_fields';
+import * as migration_20260820_173924_add_syndication from './20260820_173924_add_syndication';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20260820_030038_add_newsletter_send_fields.up,
     down: migration_20260820_030038_add_newsletter_send_fields.down,
-    name: '20260820_030038_add_newsletter_send_fields'
+    name: '20260820_030038_add_newsletter_send_fields',
+  },
+  {
+    up: migration_20260820_173924_add_syndication.up,
+    down: migration_20260820_173924_add_syndication.down,
+    name: '20260820_173924_add_syndication'
   },
 ];

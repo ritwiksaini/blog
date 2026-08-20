@@ -9,7 +9,7 @@
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
-    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation BLOB_READ_WRITE_TOKEN=vercel_blob_rw_codegenplaceholder_codegenplaceholder payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
