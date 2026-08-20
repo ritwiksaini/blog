@@ -54,3 +54,62 @@ export const welcomeEmail = (base: string, unsubscribeToken: string) => ({
     unsubscribeUrl(base, unsubscribeToken),
   ].join('\n'),
 })
+
+/**
+ * The announcement sent when a post goes out to the list.
+ *
+ * Plain text for the same reasons as the welcome email, and with the same
+ * shape: what this is, then the link, then how to leave.
+ *
+ * The excerpt leads because plain text has no preheader tag, so the first line
+ * *is* the inbox preview. Anything above it — a greeting, a publication name —
+ * would spend the only line most people read on something they already know.
+ */
+export const postEmail = ({
+  base,
+  title,
+  excerpt,
+  note,
+  kicker,
+  minutes,
+  slug,
+  unsubscribeToken,
+}: {
+  base: string
+  title: string
+  excerpt: string
+  note?: string | null
+  kicker: string[]
+  minutes: number
+  slug: string
+  unsubscribeToken: string
+}) => {
+  // `geography · assetClass · sector · N min read` — the same kicker the post
+  // carries on the site. A reader who subscribed for one sector can tell from
+  // the preview whether this one is theirs.
+  const meta = [...kicker, `${minutes} min read`].join(' · ')
+
+  const lines = [excerpt.trim(), '']
+
+  // Omitted entirely when blank rather than left as an empty gap, so a post
+  // without a note reads as deliberate instead of unfinished.
+  if (note?.trim()) lines.push(note.trim(), '')
+
+  lines.push(
+    meta,
+    '',
+    'Read it here:',
+    `${base}/${slug}`,
+    '',
+    'You are subscribed to new blogs by Ritwik Saini.',
+    `Unsubscribe: ${unsubscribeUrl(base, unsubscribeToken)}`,
+  )
+
+  return {
+    // The title alone. A "New post:" prefix would spend the most-scanned line
+    // in the inbox restating what the From line and the subscription already
+    // say, and these titles are declarative claims that stand on their own.
+    subject: title,
+    text: lines.join('\n'),
+  }
+}

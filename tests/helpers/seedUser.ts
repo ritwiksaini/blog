@@ -1,3 +1,7 @@
+// Must stay above every other import: it pins the connection to the dev
+// branch, and module bodies below run after it only because it is declared first.
+import './env.js'
+
 import { getPayload } from 'payload'
 import config from '../../src/payload.config.js'
 

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isBot } from '../access/roles'
+import { sendPostNewsletter } from '../endpoints/sendPostNewsletter'
 import { formatSlug } from '../utilities/formatSlug'
 import { assetClassOptions, geographyOptions } from './postTaxonomy'
 
@@ -13,6 +14,7 @@ export const Posts: CollectionConfig = {
   versions: {
     drafts: true,
   },
+  endpoints: [sendPostNewsletter],
   access: {
     // Logged-in admin sees everything (including drafts); public requests
     // only ever see published documents.
@@ -173,6 +175,37 @@ export const Posts: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description: 'Create a new sector if none of the existing ones fit.',
+      },
+    },
+    {
+      name: 'newsletterNote',
+      type: 'textarea',
+      admin: {
+        description:
+          'Optional. A line or two on why you wrote this, sent above the link in the email. Left out entirely when blank, and never shown on the site.',
+      },
+    },
+    {
+      // Written by the send endpoint, never by hand: it is the record of an
+      // action that already happened, and editing it would either re-arm a
+      // send that went out or suppress one that did not.
+      name: 'newsletterSentAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        date: { pickerAppearance: 'dayAndTime' },
+        description: 'Set automatically when the announcement goes out.',
+      },
+    },
+    {
+      name: 'sendNewsletter',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '/components/SendNewsletterButton#SendNewsletterButton',
+        },
       },
     },
   ],

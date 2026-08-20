@@ -3,6 +3,7 @@ import * as migration_20260818_001924_add_sectors_assetclass_sources_pitches fro
 import * as migration_20260818_002448_drop_industry from './20260818_002448_drop_industry';
 import * as migration_20260819_220803_add_subscribers from './20260819_220803_add_subscribers';
 import * as migration_20260819_232242_add_subscriber_tokens from './20260819_232242_add_subscriber_tokens';
+import * as migration_20260820_030038_add_newsletter_send_fields from './20260820_030038_add_newsletter_send_fields';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20260819_232242_add_subscriber_tokens.up,
     down: migration_20260819_232242_add_subscriber_tokens.down,
-    name: '20260819_232242_add_subscriber_tokens'
+    name: '20260819_232242_add_subscriber_tokens',
+  },
+  {
+    up: migration_20260820_030038_add_newsletter_send_fields.up,
+    down: migration_20260820_030038_add_newsletter_send_fields.down,
+    name: '20260820_030038_add_newsletter_send_fields'
   },
 ];

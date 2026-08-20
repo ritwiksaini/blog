@@ -224,6 +224,14 @@ export interface Post {
    * Create a new sector if none of the existing ones fit.
    */
   sector: number | Sector;
+  /**
+   * Optional. A line or two on why you wrote this, sent above the link in the email. Left out entirely when blank, and never shown on the site.
+   */
+  newsletterNote?: string | null;
+  /**
+   * Set automatically when the announcement goes out.
+   */
+  newsletterSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -482,6 +490,8 @@ export interface PostsSelect<T extends boolean = true> {
   geography?: T;
   assetClass?: T;
   sector?: T;
+  newsletterNote?: T;
+  newsletterSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

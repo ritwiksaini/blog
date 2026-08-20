@@ -34,7 +34,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    // npm, not pnpm: package.json's test scripts say pnpm but this project has
+    // never used it, and `pnpm dev` fails with command-not-found.
+    command: 'npm run dev',
     reuseExistingServer: true,
     url: 'http://localhost:3000',
   },
