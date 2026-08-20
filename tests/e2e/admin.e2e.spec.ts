@@ -6,6 +6,11 @@ test.describe('Admin Panel', () => {
   let page: Page
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // `next dev` compiles the admin bundle on first request, which takes well
+    // over the default 30s hook timeout on a cold start. Without this the suite
+    // only passes when something else has already warmed /admin.
+    testInfo.setTimeout(180_000)
+
     await seedTestUser()
 
     const context = await browser.newContext()

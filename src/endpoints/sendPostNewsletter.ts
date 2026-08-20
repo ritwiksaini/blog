@@ -16,7 +16,13 @@ const BATCH_SIZE = 100
 const json = (body: unknown, status: number) =>
   Response.json(body as Record<string, unknown>, { status })
 
-type Message = { to: string; subject: string; text: string }
+type Message = {
+  to: string
+  subject: string
+  text: string
+  html: string
+  headers: Record<string, string>
+}
 
 /**
  * Resend's batch endpoint, called directly.
@@ -26,7 +32,7 @@ type Message = { to: string; subject: string; text: string }
  * adapter configured in payload.config.ts, so the two paths can't drift into
  * sending from different addresses.
  */
-async function sendBatch(messages: Message[], apiKey: string): Promise<void> {
+export async function sendBatch(messages: Message[], apiKey: string): Promise<void> {
   const response = await fetch('https://api.resend.com/emails/batch', {
     method: 'POST',
     headers: {
@@ -34,11 +40,12 @@ async function sendBatch(messages: Message[], apiKey: string): Promise<void> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(
-      messages.map((message) => ({
+      messages.map(({ headers, ...message }) => ({
         from: 'Ritwik Saini <posts@updates.ritwiksaini.com>',
         // A reader who writes back is the most valuable thing a list this size
         // produces, and posts@ is a send-only address nobody reads.
         reply_to: 'sritwik24@gmail.com',
+        headers,
         ...message,
       })),
     ),

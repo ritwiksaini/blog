@@ -1,10 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Pins the whole test run to the dev branch, and refuses to start against
+ * production.
+ *
+ * This must not be `dotenv/config`. That loads `.env`, which is production, and
+ * Playwright spawns the webServer as a child of this process — so `next dev`
+ * would inherit DATABASE_URI=production and ignore `.env.local`, which only
+ * applies to variables Next.js does not already see set.
  */
-import 'dotenv/config'
+import './tests/helpers/env.js'
 
 /**
  * See https://playwright.dev/docs/test-configuration.

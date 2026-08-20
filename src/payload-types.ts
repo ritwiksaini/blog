@@ -225,7 +225,7 @@ export interface Post {
    */
   sector: number | Sector;
   /**
-   * Optional. A line or two on why you wrote this, sent above the link in the email. Left out entirely when blank, and never shown on the site.
+   * Optional. The opening line of the announcement email, after "Hello,". A sentence or two easing the reader into the subject. When blank the excerpt opens the email instead. Never shown on the site.
    */
   newsletterNote?: string | null;
   /**
