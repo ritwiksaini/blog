@@ -18,13 +18,33 @@ export function SendNewsletterButton() {
   // Read from the form rather than the saved doc so the button reacts to an
   // unsaved publish/unpublish in the same session.
   const status = useFormFields(([fields]) => fields?._status?.value)
+  const draftNote = useFormFields(([fields]) => fields?.newsletterNote?.value)
 
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState('')
   const [count, setCount] = useState<number | null>(null)
 
-  const sentAt = (savedDocumentData as { newsletterSentAt?: string } | undefined)?.newsletterSentAt
+  const saved = savedDocumentData as
+    | { newsletterSentAt?: string; newsletterNote?: string }
+    | undefined
+
+  const sentAt = saved?.newsletterSentAt
   const published = status === 'published'
+
+  // Gated on the *saved* value, not the form's: the endpoint reads the stored
+  // document, so a line typed and not yet saved would send the old email while
+  // the button looked ready.
+  const savedNote = saved?.newsletterNote?.trim()
+  const typedNote = typeof draftNote === 'string' ? draftNote.trim() : ''
+  const ready = published && Boolean(savedNote)
+
+  const blocker = !published
+    ? 'Publish the post before sending. The email links straight to it.'
+    : !savedNote
+      ? typedNote
+        ? 'Save the post, then send. The email uses the saved opening line.'
+        : 'Write the opening line first. "Why this one" is what a subscriber reads before anything else.'
+      : null
 
   useEffect(() => {
     if (!id || sentAt) return
@@ -97,17 +117,13 @@ export function SendNewsletterButton() {
     <div className="field-type">
       <div className="field-label">Newsletter</div>
 
-      {!published && (
-        <p style={{ margin: '0 0 0.5rem', opacity: 0.7 }}>
-          Publish the post before sending. The email links straight to it.
-        </p>
-      )}
+      {blocker && <p style={{ margin: '0 0 0.5rem', opacity: 0.7 }}>{blocker}</p>}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
         <Button
           buttonStyle={phase === 'confirming' ? 'primary' : 'secondary'}
           size="small"
-          disabled={!published || phase === 'sending'}
+          disabled={!ready || phase === 'sending'}
           onClick={() => (phase === 'confirming' ? send(false) : setPhase('confirming'))}
         >
           {phase === 'sending'
@@ -120,7 +136,7 @@ export function SendNewsletterButton() {
         <Button
           buttonStyle="none"
           size="small"
-          disabled={!published || phase === 'sending'}
+          disabled={!ready || phase === 'sending'}
           onClick={() => send(true)}
         >
           Send test to me

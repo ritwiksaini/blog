@@ -150,7 +150,12 @@ export const postEmail = ({
   base: string
   title: string
   excerpt: string
-  note?: string | null
+  /**
+   * The handwritten opening line. Required, and deliberately not defaulted to
+   * the excerpt: the excerpt is a summary, and an email that opens with one
+   * reads as generated. The send endpoint refuses rather than substituting.
+   */
+  note: string
   kicker: string[]
   minutes: number
   slug: string
@@ -160,10 +165,8 @@ export const postEmail = ({
   const unsubscribe = unsubscribeUrl(base, unsubscribeToken)
   const meta = [...kicker, `${minutes} min read`].join(' · ')
 
-  // The note is the opening line when there is one. Without it the excerpt
-  // opens instead, and is not then repeated as the standfirst below the title.
-  const intro = note?.trim() || excerpt.trim()
-  const standfirst = note?.trim() ? excerpt.trim() : null
+  const intro = note.trim()
+  const standfirst = excerpt.trim()
 
   const text = [
     'Hello,',
@@ -172,7 +175,8 @@ export const postEmail = ({
     '',
     title,
     meta,
-    ...(standfirst ? ['', standfirst] : []),
+    '',
+    standfirst,
     '',
     `Read it here: ${url}`,
     '',
@@ -188,8 +192,8 @@ export const postEmail = ({
     <h1 style="margin:0 0 8px;font-family:${SERIF};font-size:23px;line-height:1.3;font-weight:700;">
       <a href="${url}" style="color:${INK};text-decoration:none;">${escape(title)}</a>
     </h1>
-    <p style="margin:0 0 ${standfirst ? '14px' : '24px'};font-family:${SANS};font-size:11px;line-height:1.5;letter-spacing:0.12em;text-transform:uppercase;color:${INK_MUTED};">${escape(meta)}</p>
-    ${standfirst ? `<p style="margin:0 0 24px;color:#3f3f46;">${escape(standfirst)}</p>` : ''}
+    <p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:1.5;letter-spacing:0.12em;text-transform:uppercase;color:${INK_MUTED};">${escape(meta)}</p>
+    <p style="margin:0 0 24px;color:#3f3f46;">${escape(standfirst)}</p>
     <p style="margin:0 0 32px;"><a href="${url}" style="color:${ACCENT};text-decoration:underline;">Read the full piece</a></p>`,
     footer: `      You are subscribed to new posts by Ritwik Saini. ${footerLink(unsubscribe, 'Unsubscribe')}.`,
   })

@@ -1,6 +1,14 @@
 import type { CollectionConfig } from 'payload'
 
 import { isBot } from '../access/roles'
+
+// Matches the drafting endpoint's rule. That validator only sees drafted
+// markdown, so a field typed straight into the admin would otherwise slip past
+// the house style it enforces everywhere else.
+const EM_DASH = /\u2014/
+
+// Two sentences of voice. Longer stops reading as a personal line.
+const NOTE_MAX = 320
 import { sendPostNewsletter } from '../endpoints/sendPostNewsletter'
 import { formatSlug } from '../utilities/formatSlug'
 import { assetClassOptions, geographyOptions } from './postTaxonomy'
@@ -180,9 +188,25 @@ export const Posts: CollectionConfig = {
     {
       name: 'newsletterNote',
       type: 'textarea',
+      label: 'Why this one',
+      // Not `required`: a post is publishable without ever being emailed, and
+      // the drafting bot has nothing personal to say. The send endpoint is what
+      // insists on it, because that is the only moment it actually matters.
+      //
+      // The length cap lives here rather than in `maxLength` because a custom
+      // `validate` replaces Payload's built-in field validation wholesale, so a
+      // `maxLength` alongside it is silently never checked.
+      validate: (value: string | null | undefined) => {
+        if (!value) return true
+        if (EM_DASH.test(value)) return 'House style: no em dashes.'
+        if (value.length > NOTE_MAX) {
+          return `Keep this to ${NOTE_MAX} characters. Past two sentences it reads as a second standfirst rather than an aside.`
+        }
+        return true
+      },
       admin: {
         description:
-          'Optional. The opening line of the announcement email, after "Hello,". A sentence or two easing the reader into the subject. When blank the excerpt opens the email instead. Never shown on the site.',
+          'What made you write this, or what surprised you while writing it. One or two sentences, in your voice. This is the first thing a subscriber reads, and the announcement cannot be sent without it. Never shown on the site.',
       },
     },
     {

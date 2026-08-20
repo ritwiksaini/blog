@@ -105,6 +105,16 @@ export const sendPostNewsletter: Endpoint = {
       return json({ error: 'This post is not published yet.' }, 409)
     }
 
+    // Checked before the test send too: the point of the test is to read the
+    // real thing back, and there is no real thing without this line.
+    const note = post.newsletterNote?.trim()
+    if (!note) {
+      return json(
+        { error: 'This post has no opening line yet. Fill in "Why this one" and save.' },
+        409,
+      )
+    }
+
     if (!isTest && post.newsletterSentAt) {
       return json(
         { error: `Already sent on ${new Date(post.newsletterSentAt).toUTCString()}.` },
@@ -121,7 +131,7 @@ export const sendPostNewsletter: Endpoint = {
         base,
         title: post.title,
         excerpt: post.excerpt,
-        note: post.newsletterNote,
+        note,
         kicker,
         minutes,
         slug: post.slug,
@@ -144,8 +154,16 @@ export const sendPostNewsletter: Endpoint = {
 
       const message = { to: user.email, ...build(docs[0]?.unsubscribeToken ?? 'test-token') }
 
-      if (apiKey) await sendBatch([message], apiKey)
-      else await payload.sendEmail(message)
+      // Reported rather than thrown. A test send failing tells you something
+      // specific and actionable about the provider, and a generic 500 throws
+      // that away right when you are trying to find out whether sending works.
+      try {
+        if (apiKey) await sendBatch([message], apiKey)
+        else await payload.sendEmail(message)
+      } catch (error) {
+        payload.logger.error({ err: error, to: user.email }, 'newsletter test send failed')
+        return json({ error: `Test send failed: ${(error as Error).message}` }, 502)
+      }
 
       return json({ ok: true, test: true, sent: 1 }, 200)
     }
