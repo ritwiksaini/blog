@@ -4,6 +4,7 @@ import config from '@/payload.config'
 
 import { DataMesh } from './DataMesh'
 import { PostListItem } from './PostListItem'
+import { SubscribeForm } from './SubscribeForm'
 
 export const revalidate = 60
 
@@ -46,6 +47,10 @@ export default async function HomePage() {
           <p className="mt-4 max-w-md font-mono-body text-sm text-ink-muted">
             Long-form theses and market notes, published as they&apos;re finished.
           </p>
+
+          <div className="max-w-md">
+            <SubscribeForm source="home" />
+          </div>
         </div>
         <div className="flex flex-col gap-6">
           <DataMesh className="h-16 w-full text-accent" />

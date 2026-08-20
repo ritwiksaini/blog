@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import path from 'path'
@@ -11,6 +12,7 @@ import { Media } from './collections/Media'
 import { Posts } from './collections/Posts'
 import { Pitches } from './collections/Pitches'
 import { Sectors } from './collections/Sectors'
+import { Subscribers } from './collections/Subscribers'
 import { draftFromPitch } from './endpoints/draftFromPitch'
 
 const filename = fileURLToPath(import.meta.url)
@@ -38,6 +40,19 @@ if (process.env.BLOB_READ_WRITE_TOKEN) {
   )
 }
 
+// Newsletter confirmations go out through Resend from a dedicated subdomain,
+// so a deliverability problem never touches ritwiksaini.com's reputation.
+// Left unset when the key is absent (local work, CI), where Payload falls back
+// to writing email to the console — the alternative is a config that cannot be
+// loaded without a live API key.
+const email = process.env.RESEND_API_KEY
+  ? resendAdapter({
+      defaultFromAddress: 'posts@updates.ritwiksaini.com',
+      defaultFromName: 'Ritwik Saini',
+      apiKey: process.env.RESEND_API_KEY,
+    })
+  : undefined
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -45,7 +60,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Posts, Sectors, Pitches],
+  collections: [Users, Media, Posts, Sectors, Pitches, Subscribers],
+  email,
   endpoints: [draftFromPitch],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

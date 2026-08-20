@@ -23,7 +23,7 @@ export default function robots(): MetadataRoute.Robots {
           'Applebot-Extended',
         ],
         allow: '/',
-        disallow: ['/admin/', '/api/'],
+        disallow: ['/admin/', '/api/', '/newsletter/'],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

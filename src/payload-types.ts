@@ -72,6 +72,7 @@ export interface Config {
     posts: Post;
     sectors: Sector;
     pitches: Pitch;
+    subscribers: Subscriber;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +85,7 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     sectors: SectorsSelect<false> | SectorsSelect<true>;
     pitches: PitchesSelect<false> | PitchesSelect<true>;
+    subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -303,6 +305,27 @@ export interface Pitch {
   createdAt: string;
 }
 /**
+ * Newsletter subscribers. Added by the public form, never editable by it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers".
+ */
+export interface Subscriber {
+  id: number;
+  email: string;
+  status: 'pending' | 'confirmed' | 'unsubscribed';
+  /**
+   * Slug of the post the reader subscribed from, or "home".
+   */
+  source?: string | null;
+  confirmToken?: string | null;
+  unsubscribeToken?: string | null;
+  confirmedAt?: string | null;
+  unsubscribedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -345,6 +368,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pitches';
         value: number | Pitch;
+      } | null)
+    | ({
+        relationTo: 'subscribers';
+        value: number | Subscriber;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -501,6 +528,21 @@ export interface PitchesSelect<T extends boolean = true> {
   status?: T;
   linkedPost?: T;
   draftedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers_select".
+ */
+export interface SubscribersSelect<T extends boolean = true> {
+  email?: T;
+  status?: T;
+  source?: T;
+  confirmToken?: T;
+  unsubscribeToken?: T;
+  confirmedAt?: T;
+  unsubscribedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
