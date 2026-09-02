@@ -74,6 +74,7 @@ export interface Config {
     pitches: Pitch;
     subscribers: Subscriber;
     syndication: Syndication;
+    theses: Thesis;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     pitches: PitchesSelect<false> | PitchesSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     syndication: SyndicationSelect<false> | SyndicationSelect<true>;
+    theses: ThesesSelect<false> | ThesesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -347,7 +349,24 @@ export interface Syndication {
    * Set from the post title when the draft is created.
    */
   label?: string | null;
-  post: number | Post;
+  /**
+   * A post syndication argues one thread of a published post. A research original argues a corpus item that never became one, and carries no link.
+   */
+  kind: 'post-syndication' | 'research-original';
+  post?: (number | null) | Post;
+  /**
+   * What this one is about. Names the row in the list view.
+   */
+  topic?: string | null;
+  /**
+   * Paths into blog-research backing a research original, in the same form a pitch uses. Provenance: without them there is no way to check the claims months later.
+   */
+  sourceAnchors?:
+    | {
+        path: string;
+        id?: string | null;
+      }[]
+    | null;
   platform: 'linkedin';
   /**
    * Queued means the routine has not written it yet.
@@ -358,7 +377,7 @@ export interface Syndication {
    */
   body?: string | null;
   /**
-   * Posted as the first comment immediately after the post itself, carrying the blog URL. This is what keeps the link out of the post body.
+   * Posted as the first comment immediately after the post itself, carrying the blog URL. This is what keeps the link out of the post body. Left empty on a research original: there is no post to send anyone to, and a loosely related link spends the reach on a click that disappoints.
    */
   linkComment?: string | null;
   /**
@@ -395,6 +414,71 @@ export interface Syndication {
    * What you changed before posting, or anything about the post that would explain its numbers later.
    */
   notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Long-form theses, one a month. Set one to "Active" and the routine works through its stages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "theses".
+ */
+export interface Thesis {
+  id: number;
+  /**
+   * The subject, not the argument. The argument is decided at stage 1.
+   */
+  topic: string;
+  /**
+   * The framing you want, in your words. Say what the topic is NOT, when the name is ambiguous: this is what stops stage 1 researching the wrong thing for a week.
+   */
+  brief?: string | null;
+  /**
+   * Required on a routine proposal. Optional on one you write yourself.
+   */
+  whyNow?: string | null;
+  /**
+   * Paths in blog-research written by each stage. Appended by the routine, in order.
+   */
+  artifacts?:
+    | {
+        stage: number;
+        path: string;
+        summary?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  geography?: ('global' | 'india' | 'united-states') | null;
+  /**
+   * Also picks the exemplar domain the routine reads: venture-capital reads exemplars/vc, private-equity reads exemplars/pe, cross reads exemplars/macro.
+   */
+  assetClass?: ('private-equity' | 'venture-capital' | 'cross') | null;
+  sector?: (number | null) | Sector;
+  /**
+   * YYYY-MM. Which month this one is for.
+   */
+  targetMonth?: string | null;
+  /**
+   * Set to "Active" to start it. Only one should be active at a time.
+   */
+  status: 'proposed' | 'active' | 'published' | 'dropped';
+  /**
+   * 1 scope, 2 market, 3 counter-case, 4 model, 5 spine, 6 draft, 7 recommend. Gates after 1, 4 and 5.
+   */
+  stage: number;
+  /**
+   * Awaiting review auto-advances after 48 hours so a quiet month still ships. Set Blocked to stop that.
+   */
+  stageStatus: 'ready' | 'awaiting-review' | 'blocked' | 'done';
+  /**
+   * When the current stage status was set. The 48 hour clock counts from here.
+   */
+  stageEnteredAt?: string | null;
+  proposedBy?: ('human' | 'routine') | null;
+  /**
+   * Set by stage 6. Its presence is what prevents double-drafting.
+   */
+  linkedPost?: (number | null) | Post;
   updatedAt: string;
   createdAt: string;
 }
@@ -449,6 +533,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'syndication';
         value: number | Syndication;
+      } | null)
+    | ({
+        relationTo: 'theses';
+        value: number | Thesis;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -631,7 +719,15 @@ export interface SubscribersSelect<T extends boolean = true> {
  */
 export interface SyndicationSelect<T extends boolean = true> {
   label?: T;
+  kind?: T;
   post?: T;
+  topic?: T;
+  sourceAnchors?:
+    | T
+    | {
+        path?: T;
+        id?: T;
+      };
   platform?: T;
   status?: T;
   body?: T;
@@ -652,6 +748,35 @@ export interface SyndicationSelect<T extends boolean = true> {
         id?: T;
       };
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "theses_select".
+ */
+export interface ThesesSelect<T extends boolean = true> {
+  topic?: T;
+  brief?: T;
+  whyNow?: T;
+  artifacts?:
+    | T
+    | {
+        stage?: T;
+        path?: T;
+        summary?: T;
+        id?: T;
+      };
+  geography?: T;
+  assetClass?: T;
+  sector?: T;
+  targetMonth?: T;
+  status?: T;
+  stage?: T;
+  stageStatus?: T;
+  stageEnteredAt?: T;
+  proposedBy?: T;
+  linkedPost?: T;
   updatedAt?: T;
   createdAt?: T;
 }

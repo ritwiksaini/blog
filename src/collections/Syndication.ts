@@ -2,6 +2,16 @@ import type { CollectionConfig } from 'payload'
 
 import { isBot } from '../access/roles'
 
+/**
+ * The three fields a bot may never write, on any operation.
+ *
+ * They record what a human observed after posting by hand. A bot filling them
+ * in would poison the only feedback signal this system has, and the damage is
+ * silent: a fabricated impression count looks exactly like a real one.
+ */
+const humanOnly = (data: Record<string, unknown> | undefined): boolean =>
+  data?.metrics === undefined && data?.postedAt === undefined && data?.postUrl === undefined
+
 // Same rule the drafting endpoint enforces on post bodies. House style does not
 // stop at the blog's edge: a LinkedIn post carrying an em dash reads as machine
 // output in exactly the same way.
@@ -18,13 +28,25 @@ const FOLD_DESKTOP = 220
 const FOLD_MOBILE = 140
 
 /**
- * One syndication draft per post per platform.
+ * LinkedIn drafts to paste by hand, of two kinds.
  *
  * The blog app has no LLM credentials, so nothing here is generated in-process.
- * The "Queue LinkedIn draft" button on a post creates a row with status
- * `queued`; the cloud syndication routine polls for those, writes `body` and
- * `linkComment`, and flips the status to `drafted`. Identical in shape to the
- * pitch/drafter loop that already works.
+ *
+ * A **post syndication** starts from a published post: the "Queue LinkedIn
+ * draft" button creates a row with status `queued`, and the syndication routine
+ * writes `body` and `linkComment` and flips the status to `drafted`. One per
+ * post per platform.
+ *
+ * A **research original** starts from the research corpus instead, and is
+ * created by the weekly routine itself rather than by a button. The sweep
+ * produces far more sourced material than the blog can publish, and an item
+ * that never became a post is not thereby worthless. It carries no post and no
+ * link.
+ *
+ * Both kinds live here rather than in two collections **because of `metrics`**.
+ * Those numbers are hand-entered and are the only feedback signal this system
+ * has, so splitting them across two tables would make the one comparison worth
+ * making, research originals against post syndications, impossible.
  *
  * Nothing in this collection posts anything. It produces text to paste and a
  * place to record what happened afterwards.
@@ -33,7 +55,7 @@ export const Syndication: CollectionConfig = {
   slug: 'syndication',
   admin: {
     useAsTitle: 'label',
-    defaultColumns: ['label', 'platform', 'status', 'postedAt'],
+    defaultColumns: ['label', 'kind', 'status', 'postedAt'],
     description:
       'Platform-native drafts to paste by hand, and the performance numbers you enter afterwards.',
     group: 'Distribution',
@@ -41,17 +63,21 @@ export const Syndication: CollectionConfig = {
   access: {
     // Working drafts, never public. Same posture as Pitches.
     read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
+    // The weekly research routine creates its own rows, so `create` needs the
+    // same guard as `update`. Post syndications are still created by a button.
+    create: ({ req, data }) => {
+      if (!req.user) return false
+      if (!isBot(req.user)) return true
+      if (!humanOnly(data)) return false
+      return data?.status === undefined || data?.status === 'drafted'
+    },
     update: ({ req, data }) => {
       if (!req.user) return false
       if (!isBot(req.user)) return true
 
       // The routine writes the copy and marks it drafted. It must never record
-      // that something was posted, and must never touch the numbers: those are
-      // observations of the real world, and a bot inventing them would poison
-      // the only feedback signal this system has.
-      if (data?.metrics !== undefined) return false
-      if (data?.postedAt !== undefined || data?.postUrl !== undefined) return false
+      // that something was posted, and must never touch the numbers.
+      if (!humanOnly(data)) return false
       return data?.status === undefined || data?.status === 'drafted'
     },
     delete: ({ req }) => Boolean(req.user) && !isBot(req.user),
@@ -59,12 +85,36 @@ export const Syndication: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
-        // One draft per post per platform. Without this the button becomes a
-        // duplicate factory on every press, and the routine would then draft
-        // the same post repeatedly.
         const postId =
           typeof data?.post === 'object' && data?.post !== null ? data.post.id : data?.post
         const platform = data?.platform ?? originalDoc?.platform ?? 'linkedin'
+        const kind = data?.kind ?? originalDoc?.kind ?? 'post-syndication'
+        const topic = data?.topic ?? originalDoc?.topic
+
+        // `post` cannot be a required field once research originals exist, so
+        // the requirement moves here and becomes conditional. Both directions
+        // are checked: a research original carrying a post would silently take
+        // the post-syndication branch everywhere below.
+        if (kind === 'post-syndication' && !postId) {
+          throw new Error(
+            'A post syndication needs a post. Choose one, or set Kind to "Research original".',
+          )
+        }
+
+        if (kind === 'research-original' && postId) {
+          throw new Error(
+            'A research original has no post behind it. Clear the post, or set Kind to "Post syndication".',
+          )
+        }
+
+        if (kind === 'research-original' && !String(topic ?? '').trim()) {
+          throw new Error('A research original needs a topic. It is what the list view is named by.')
+        }
+
+        // One draft per post per platform. Without this the button becomes a
+        // duplicate factory on every press, and the routine would then draft
+        // the same post repeatedly. Research originals are exempt: there is no
+        // post to be duplicated against, and two in one week is legitimate.
 
         if (operation === 'create' && postId) {
           const existing = await req.payload.find({
@@ -84,9 +134,11 @@ export const Syndication: CollectionConfig = {
         }
 
         // Denormalised so the list view reads as titles rather than row ids.
-        // Refreshed whenever the relationship changes, since a post retitled
-        // after queueing would otherwise leave a stale label behind.
-        if (postId && (operation === 'create' || data?.post !== undefined)) {
+        // Refreshed whenever the source changes, since a post retitled after
+        // queueing would otherwise leave a stale label behind.
+        if (kind === 'research-original') {
+          if (data?.topic !== undefined || operation === 'create') data.label = topic
+        } else if (postId && (operation === 'create' || data?.post !== undefined)) {
           const post = await req.payload.findByID({
             collection: 'posts',
             id: postId,
@@ -113,12 +165,53 @@ export const Syndication: CollectionConfig = {
       },
     },
     {
+      name: 'kind',
+      type: 'select',
+      required: true,
+      defaultValue: 'post-syndication',
+      index: true,
+      options: [
+        { label: 'Post syndication', value: 'post-syndication' },
+        { label: 'Research original', value: 'research-original' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description:
+          'A post syndication argues one thread of a published post. A research original argues a corpus item that never became one, and carries no link.',
+      },
+    },
+    {
       name: 'post',
       type: 'relationship',
       relationTo: 'posts',
-      required: true,
+      // Conditionally required, which a field-level flag cannot express, so the
+      // requirement lives in `beforeChange` instead. See the hook.
       index: true,
-      admin: { position: 'sidebar' },
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.kind !== 'research-original',
+      },
+    },
+    {
+      name: 'topic',
+      type: 'text',
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.kind === 'research-original',
+        description: 'What this one is about. Names the row in the list view.',
+      },
+    },
+    {
+      name: 'sourceAnchors',
+      type: 'array',
+      labels: { singular: 'Corpus anchor', plural: 'Corpus anchors' },
+      admin: {
+        description:
+          'Paths into blog-research backing a research original, in the same form a pitch uses. Provenance: without them there is no way to check the claims months later.',
+        condition: (data) => data?.kind === 'research-original',
+        initCollapsed: true,
+      },
+      fields: [{ name: 'path', type: 'text', required: true }],
     },
     {
       name: 'platform',
@@ -187,7 +280,7 @@ export const Syndication: CollectionConfig = {
       admin: {
         rows: 3,
         description:
-          'Posted as the first comment immediately after the post itself, carrying the blog URL. This is what keeps the link out of the post body.',
+          'Posted as the first comment immediately after the post itself, carrying the blog URL. This is what keeps the link out of the post body. Left empty on a research original: there is no post to send anyone to, and a loosely related link spends the reach on a click that disappoints.',
       },
       validate: (value: string | null | undefined) => {
         if (!value) return true

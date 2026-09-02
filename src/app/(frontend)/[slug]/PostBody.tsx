@@ -27,6 +27,15 @@ const startsWithBoldLeadIn = (node: SerializedLexicalNode): boolean => {
 
 const converters: JSXConvertersFunction = ({ defaultConverters }) => ({
   ...defaultConverters,
+  /**
+   * A model table is usually wider than the 68-character article column, and a
+   * table that widens the column makes the whole page scroll sideways on a
+   * phone. The default converter renders a bare <table>, so the scroll
+   * container has to be added here: CSS alone cannot introduce a wrapper.
+   */
+  table: (args) => (
+    <div className="post-table">{(defaultConverters as any).table?.(args as never)}</div>
+  ),
   quote: ({ node, nodesToJSX }) => {
     const children = nodesToJSX({ nodes: (node as any).children ?? [] })
 

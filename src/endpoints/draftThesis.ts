@@ -8,39 +8,27 @@ const json = (body: unknown, status: number) =>
   Response.json(body as Record<string, unknown>, { status })
 
 /**
- * POST /api/agent/draft-from-pitch
+ * POST /api/agent/draft-thesis
  *
- * The drafting agent submits plain markdown; this converts it to Lexical
- * server-side, creates the post as a draft, and marks the originating pitch as
- * drafted, all in one transaction.
+ * Stage 6 of the thesis routine. Structurally identical to
+ * `draft-from-pitch`: markdown in, a draft post out, the originating row marked
+ * so a re-run cannot duplicate it. The rules it enforces live in
+ * `validateDraft.ts` and are shared with that endpoint.
  *
- * Markdown is the contract deliberately: an LLM emitting raw Lexical JSON
- * produces subtly malformed documents that store fine as jsonb and then render
- * blank, with nothing to catch it.
- *
- * The validation lives in `validateDraft.ts` because `draft-thesis` enforces
- * exactly the same rules. See that file.
+ * The format is forced to `long-thesis` rather than taken from the request.
+ * That is what admits markdown tables, and letting a caller pick it would make
+ * the table ban on the other formats bypassable by sending one field.
  */
-export const draftFromPitch: Endpoint = {
-  path: '/agent/draft-from-pitch',
+export const draftThesis: Endpoint = {
+  path: '/agent/draft-thesis',
   method: 'post',
   handler: async (req) => {
     await addDataAndFileToRequest(req)
 
     if (!req.user) return json({ error: 'Unauthorized' }, 401)
 
-    const {
-      pitchId,
-      title,
-      slug,
-      excerpt,
-      markdown,
-      sources,
-      geography,
-      assetClass,
-      sector,
-      postFormat = 'sharp-take',
-    } = (req.data ?? {}) as Record<string, any>
+    const { thesisId, title, slug, excerpt, markdown, sources, geography, assetClass, sector } =
+      (req.data ?? {}) as Record<string, any>
 
     const { errors, words } = validateDraft({
       title,
@@ -50,10 +38,10 @@ export const draftFromPitch: Endpoint = {
       geography,
       assetClass,
       sector,
-      postFormat,
+      postFormat: 'long-thesis',
     })
 
-    if (!pitchId) errors.unshift('pitchId is required')
+    if (!thesisId) errors.unshift('thesisId is required')
 
     if (errors.length) return json({ errors }, 422)
 
@@ -63,13 +51,14 @@ export const draftFromPitch: Endpoint = {
     await initTransaction(req)
 
     try {
-      const pitch = await req.payload.findByID({ collection: 'pitches', id: pitchId, req })
+      const thesis = await req.payload.findByID({ collection: 'theses', id: thesisId, req })
 
-      // Idempotency: re-running the drafter must never produce a second post.
-      if (pitch.status !== 'selected' || pitch.linkedPost) {
+      // Idempotency, the same guarantee the drafter has: re-running stage 6 is
+      // always safe and never produces a second post. Treat a 409 as a stop.
+      if (thesis.status !== 'active' || thesis.linkedPost) {
         await killTransaction(req)
         return json(
-          { error: 'Pitch is not selected, or has already been drafted', status: pitch.status },
+          { error: 'Thesis is not active, or has already been drafted', status: thesis.status },
           409,
         )
       }
@@ -95,15 +84,16 @@ export const draftFromPitch: Endpoint = {
       })
 
       await req.payload.update({
-        collection: 'pitches',
-        id: pitchId,
+        collection: 'theses',
+        id: thesisId,
         overrideAccess: false,
         user: req.user,
         req,
         data: {
-          status: 'drafted',
           linkedPost: post.id,
-          draftedAt: new Date().toISOString(),
+          stage: 7,
+          stageStatus: 'ready',
+          stageEnteredAt: new Date().toISOString(),
         },
       })
 

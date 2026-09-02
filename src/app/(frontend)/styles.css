@@ -136,3 +136,57 @@ body {
   font-weight: 700;
   color: var(--color-ink);
 }
+
+/* A long-form thesis carries a model, and a model is a table. It is the only
+   element in a post allowed to be wider than the text column, so it scrolls
+   inside its own box rather than widening the article. */
+.prose-article :where(.post-table) {
+  margin-block: 2em;
+  overflow-x: auto;
+  /* Keeps the shadowless edge from reading as a cut-off rather than a scroll. */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The feature emits its own wrapper inside ours. Left alone it establishes the
+   width, and the scroll container above it never has anything to scroll. */
+.prose-article .post-table .lexical-table-container {
+  display: contents;
+}
+
+.prose-article .post-table table {
+  width: auto;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono-body);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: start;
+}
+
+/* The library writes `border: 1px solid #ccc` and `padding: 8px` as INLINE
+   styles on every cell, and an inline style beats a stylesheet rule at any
+   specificity. `!important` is the only thing that wins, and without it every
+   model table renders with a grey that appears nowhere else on the site. */
+.prose-article .post-table th,
+.prose-article .post-table td {
+  padding: 0.5em 0.9em !important;
+  border: 1px solid var(--color-paper-dark) !important;
+  vertical-align: top;
+  /* Numbers are the point of these tables; wrapping a figure mid-way makes a
+     column impossible to scan down. */
+  white-space: nowrap;
+}
+
+.prose-article .post-table th {
+  font-family: var(--font-mono-display);
+  font-weight: 700;
+  background: var(--color-paper-dark);
+  color: var(--color-ink);
+}
+
+.prose-article .post-table p {
+  margin-block: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}

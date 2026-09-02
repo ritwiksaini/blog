@@ -5,6 +5,8 @@ import * as migration_20260819_220803_add_subscribers from './20260819_220803_ad
 import * as migration_20260819_232242_add_subscriber_tokens from './20260819_232242_add_subscriber_tokens';
 import * as migration_20260820_030038_add_newsletter_send_fields from './20260820_030038_add_newsletter_send_fields';
 import * as migration_20260820_173924_add_syndication from './20260820_173924_add_syndication';
+import * as migration_20260902_200446_add_research_originals from './20260902_200446_add_research_originals';
+import * as migration_20260902_201935_add_theses from './20260902_201935_add_theses';
 
 export const migrations = [
   {
@@ -40,6 +42,16 @@ export const migrations = [
   {
     up: migration_20260820_173924_add_syndication.up,
     down: migration_20260820_173924_add_syndication.down,
-    name: '20260820_173924_add_syndication'
+    name: '20260820_173924_add_syndication',
+  },
+  {
+    up: migration_20260902_200446_add_research_originals.up,
+    down: migration_20260902_200446_add_research_originals.down,
+    name: '20260902_200446_add_research_originals',
+  },
+  {
+    up: migration_20260902_201935_add_theses.up,
+    down: migration_20260902_201935_add_theses.down,
+    name: '20260902_201935_add_theses'
   },
 ];
