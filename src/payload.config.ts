@@ -16,8 +16,11 @@ import { Sectors } from './collections/Sectors'
 import { Subscribers } from './collections/Subscribers'
 import { Syndication } from './collections/Syndication'
 import { Theses } from './collections/Theses'
+import { ExemplarCandidates } from './collections/ExemplarCandidates'
 import { draftFromPitch } from './endpoints/draftFromPitch'
 import { draftThesis } from './endpoints/draftThesis'
+import { thesisStage } from './endpoints/thesisStage'
+import { thesisReview } from './endpoints/thesisReview'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -64,9 +67,19 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Posts, Sectors, Pitches, Subscribers, Syndication, Theses],
+  collections: [
+    Users,
+    Media,
+    Posts,
+    Sectors,
+    Pitches,
+    Subscribers,
+    Syndication,
+    Theses,
+    ExemplarCandidates,
+  ],
   email,
-  endpoints: [draftFromPitch, draftThesis],
+  endpoints: [draftFromPitch, draftThesis, thesisStage, thesisReview],
   // `editorFeatures` is shared with the drafting endpoints on purpose. See
   // `src/lexicalFeatures.ts` for why that sharing is load-bearing.
   editor: lexicalEditor({ features: editorFeatures }),

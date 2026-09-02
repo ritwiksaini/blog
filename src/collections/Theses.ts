@@ -90,18 +90,61 @@ export const Theses: CollectionConfig = {
       admin: { description: 'Required on a routine proposal. Optional on one you write yourself.' },
     },
     {
+      // The stage output, mirrored here so a gate can be reviewed without
+      // leaving the admin. `blog-research` remains the source of truth and the
+      // audit trail; this is a read-only copy so the decision and the thing
+      // being decided on sit in the same place.
       name: 'artifacts',
       type: 'array',
       labels: { singular: 'Artifact', plural: 'Artifacts' },
       admin: {
-        description:
-          'Paths in blog-research written by each stage. Appended by the routine, in order.',
-        initCollapsed: true,
+        description: 'What each stage produced. Written by the routine, newest last.',
+        initCollapsed: false,
+        readOnly: true,
       },
       fields: [
         { name: 'stage', type: 'number', required: true },
         { name: 'path', type: 'text', required: true },
-        { name: 'summary', type: 'textarea' },
+        {
+          name: 'summary',
+          type: 'textarea',
+          admin: { description: 'The stage in a few lines.' },
+        },
+        {
+          name: 'content',
+          type: 'textarea',
+          admin: {
+            rows: 24,
+            description: 'The full artifact, as committed to blog-research.',
+          },
+        },
+      ],
+    },
+    {
+      // Appended by the review endpoint, never written by hand or by the bot.
+      // A gate decision that left no record would make the run history
+      // unreadable a month later, which is exactly when it gets read.
+      name: 'reviews',
+      type: 'array',
+      labels: { singular: 'Review', plural: 'Reviews' },
+      admin: {
+        description: 'Your decisions at each gate, and the steer you gave.',
+        initCollapsed: true,
+        readOnly: true,
+      },
+      fields: [
+        { name: 'stage', type: 'number', required: true },
+        {
+          name: 'decision',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Approved', value: 'approved' },
+            { label: 'Blocked', value: 'blocked' },
+          ],
+        },
+        { name: 'note', type: 'textarea' },
+        { name: 'decidedAt', type: 'date' },
       ],
     },
     {
@@ -149,16 +192,21 @@ export const Theses: CollectionConfig = {
       },
     },
     {
+      // The stage the routine will run NEXT, not the one it just finished.
+      // Stated because the first live run left it ambiguous and would have
+      // re-run stage 1 on approval. Nothing outside `thesis-stage` may write it:
+      // stage arithmetic is the server's job, not an agent's and not yours.
       name: 'stage',
       type: 'number',
       required: true,
       defaultValue: 1,
       min: 1,
-      max: 7,
+      max: 8,
       admin: {
         position: 'sidebar',
+        readOnly: true,
         description:
-          '1 scope, 2 market, 3 counter-case, 4 model, 5 spine, 6 draft, 7 recommend. Gates after 1, 4 and 5.',
+          'The NEXT stage to run. 1 scope, 2 market, 3 counter-case, 4 model, 5 spine, 6 draft, 7 recommend. Gates after 1, 4 and 5.',
       },
     },
     {
@@ -175,8 +223,18 @@ export const Theses: CollectionConfig = {
       ],
       admin: {
         position: 'sidebar',
+        readOnly: true,
         description:
-          'Awaiting review auto-advances after 48 hours so a quiet month still ships. Set Blocked to stop that.',
+          'Use the Approve and Block buttons rather than this. Awaiting review auto-advances after 48 hours so a quiet month still ships.',
+      },
+    },
+    {
+      // The gate itself: read the artifact above, decide here.
+      name: 'reviewControl',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: { Field: '/components/ThesisReviewButtons#ThesisReviewButtons' },
       },
     },
     {

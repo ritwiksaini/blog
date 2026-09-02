@@ -75,6 +75,7 @@ export interface Config {
     subscribers: Subscriber;
     syndication: Syndication;
     theses: Thesis;
+    'exemplar-candidates': ExemplarCandidate;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +91,7 @@ export interface Config {
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     syndication: SyndicationSelect<false> | SyndicationSelect<true>;
     theses: ThesesSelect<false> | ThesesSelect<true>;
+    'exemplar-candidates': ExemplarCandidatesSelect<false> | ExemplarCandidatesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -438,13 +440,32 @@ export interface Thesis {
    */
   whyNow?: string | null;
   /**
-   * Paths in blog-research written by each stage. Appended by the routine, in order.
+   * What each stage produced. Written by the routine, newest last.
    */
   artifacts?:
     | {
         stage: number;
         path: string;
+        /**
+         * The stage in a few lines.
+         */
         summary?: string | null;
+        /**
+         * The full artifact, as committed to blog-research.
+         */
+        content?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Your decisions at each gate, and the steer you gave.
+   */
+  reviews?:
+    | {
+        stage: number;
+        decision: 'approved' | 'blocked';
+        note?: string | null;
+        decidedAt?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -463,11 +484,11 @@ export interface Thesis {
    */
   status: 'proposed' | 'active' | 'published' | 'dropped';
   /**
-   * 1 scope, 2 market, 3 counter-case, 4 model, 5 spine, 6 draft, 7 recommend. Gates after 1, 4 and 5.
+   * The NEXT stage to run. 1 scope, 2 market, 3 counter-case, 4 model, 5 spine, 6 draft, 7 recommend. Gates after 1, 4 and 5.
    */
   stage: number;
   /**
-   * Awaiting review auto-advances after 48 hours so a quiet month still ships. Set Blocked to stop that.
+   * Use the Approve and Block buttons rather than this. Awaiting review auto-advances after 48 hours so a quiet month still ships.
    */
   stageStatus: 'ready' | 'awaiting-review' | 'blocked' | 'done';
   /**
@@ -479,6 +500,45 @@ export interface Thesis {
    * Set by stage 6. Its presence is what prevents double-drafting.
    */
   linkedPost?: (number | null) | Post;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Research the harvest wants to tear down. Approve the ones worth imitating; declining with a reason is just as useful.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "exemplar-candidates".
+ */
+export interface ExemplarCandidate {
+  id: number;
+  /**
+   * Set from the publisher and URL when the routine proposes it.
+   */
+  title?: string | null;
+  publisher: string;
+  url: string;
+  /**
+   * Which gap in the coverage grid this fills, and what it teaches structurally. This is what you are judging.
+   */
+  why?: string | null;
+  /**
+   * Why this is not worth imitating. Recorded so the same piece is never proposed again, which makes declining as useful as approving.
+   */
+  declineReason?: string | null;
+  /**
+   * Set by the harvest once the teardown is written.
+   */
+  teardownPath?: string | null;
+  domain: 'vc' | 'pe' | 'macro';
+  kind?: ('thesis' | 'market-map' | 'case-study' | 'annual-letter' | 'diligence-memo' | 'regime-read') | null;
+  /**
+   * Comma separated.
+   */
+  industries?: string | null;
+  /**
+   * Approved gets torn down on the next harvest. Unreachable means the routine could not read it, usually bot protection.
+   */
+  status: 'proposed' | 'approved' | 'declined' | 'unreachable' | 'done';
   updatedAt: string;
   createdAt: string;
 }
@@ -537,6 +597,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'theses';
         value: number | Thesis;
+      } | null)
+    | ({
+        relationTo: 'exemplar-candidates';
+        value: number | ExemplarCandidate;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -765,6 +829,16 @@ export interface ThesesSelect<T extends boolean = true> {
         stage?: T;
         path?: T;
         summary?: T;
+        content?: T;
+        id?: T;
+      };
+  reviews?:
+    | T
+    | {
+        stage?: T;
+        decision?: T;
+        note?: T;
+        decidedAt?: T;
         id?: T;
       };
   geography?: T;
@@ -777,6 +851,24 @@ export interface ThesesSelect<T extends boolean = true> {
   stageEnteredAt?: T;
   proposedBy?: T;
   linkedPost?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "exemplar-candidates_select".
+ */
+export interface ExemplarCandidatesSelect<T extends boolean = true> {
+  title?: T;
+  publisher?: T;
+  url?: T;
+  why?: T;
+  declineReason?: T;
+  teardownPath?: T;
+  domain?: T;
+  kind?: T;
+  industries?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
