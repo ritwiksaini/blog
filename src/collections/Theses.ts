@@ -26,7 +26,9 @@ export const Theses: CollectionConfig = {
     defaultColumns: ['topic', 'status', 'stage', 'stageStatus', 'targetMonth'],
     description:
       'Long-form theses, one a month. Set one to "Active" and the routine works through its stages.',
-    group: 'Distribution',
+    // Its own section rather than Distribution. A thesis is a month of research
+    // with review gates in it, not something being pushed out to a channel.
+    group: 'Thesis',
   },
   access: {
     read: ({ req }) => Boolean(req.user),

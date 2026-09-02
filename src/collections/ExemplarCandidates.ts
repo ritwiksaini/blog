@@ -20,7 +20,9 @@ export const ExemplarCandidates: CollectionConfig = {
     defaultColumns: ['title', 'publisher', 'domain', 'kind', 'status'],
     description:
       'Research the harvest wants to tear down. Approve the ones worth imitating; declining with a reason is just as useful.',
-    group: 'Distribution',
+    // Sits with Theses because that is the only thing it feeds. It was never
+    // Distribution: nothing here goes out to anyone.
+    group: 'Thesis',
   },
   access: {
     read: ({ req }) => Boolean(req.user),
