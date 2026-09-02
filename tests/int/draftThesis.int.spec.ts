@@ -258,6 +258,27 @@ describe('Long-form thesis drafting', () => {
       ).rejects.toThrow()
     })
 
+    it('stamps stageEnteredAt server-side, ignoring what the caller sends', async () => {
+      // The 48 hour gate counts from this field. The first live stage 1 sent a
+      // date with no time, which would have opened its own gate 21 hours early.
+      const doc = await newThesis({ topic: `Clock ${stamp}` })
+
+      const updated = await payload.update({
+        collection: 'theses',
+        id: doc.id as number,
+        data: {
+          stageStatus: 'awaiting-review',
+          stageEnteredAt: '2020-01-01T00:00:00.000Z',
+        } as never,
+        overrideAccess: false,
+        user: bot,
+      })
+
+      const stamped = new Date(updated.stageEnteredAt as string).getTime()
+      expect(stamped).not.toBe(new Date('2020-01-01T00:00:00.000Z').getTime())
+      expect(Math.abs(stamped - Date.now())).toBeLessThan(60_000)
+    })
+
     it('lets a bot advance the stage', async () => {
       const doc = await newThesis({ topic: `Bot stage ${stamp}` })
 

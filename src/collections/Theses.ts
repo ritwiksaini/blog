@@ -45,7 +45,7 @@ export const Theses: CollectionConfig = {
   },
   hooks: {
     beforeChange: [
-      ({ data, req, operation }) => {
+      ({ data, req, operation, originalDoc }) => {
         // A routine-proposed topic must never arrive already active. The bot is
         // barred from writing `status` above, but a create carries defaults, so
         // the floor is set here too.
@@ -55,6 +55,16 @@ export const Theses: CollectionConfig = {
           data.stage = 1
           data.stageStatus = 'ready'
         }
+
+        // Stamped here, never taken from the caller. The 48 hour auto-advance
+        // counts from this field, so an agent supplying a date without a time
+        // silently shortens the review window: the first live stage 1 sent
+        // midnight for a 21:04 run and would have opened its own gate 21 hours
+        // early. A clock the reviewer depends on is not the writer's to set.
+        if (data?.stageStatus !== undefined && data.stageStatus !== originalDoc?.stageStatus) {
+          data.stageEnteredAt = new Date().toISOString()
+        }
+
         return data
       },
     ],
